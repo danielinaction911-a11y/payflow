@@ -1,0 +1,24 @@
+@import '../../../../vendor/filament/filament/resources/css/theme.css';
+
+@config 'tailwind.config.js';
+
+/* Reduce spacing between navigation groups */
+.fi-sidebar-group {
+    margin-bottom: 0.5rem !important; /* default is usually ~1.5rem */
+}
+
+/* Reduce spacing between individual nav items within a group */
+.fi-sidebar-group-items {
+    gap: 0.125rem !important; /* default is usually ~0.25rem-0.5rem */
+}
+
+/* Reduce padding inside each nav item link */
+.fi-sidebar-item-button {
+    padding-top: 0.375rem !important;
+    padding-bottom: 0.375rem !important;
+}
+
+/* Reduce spacing below group labels (e.g. "Investments", "Trading") */
+.fi-sidebar-group-label {
+    margin-bottom: 0.25rem !important;
+}

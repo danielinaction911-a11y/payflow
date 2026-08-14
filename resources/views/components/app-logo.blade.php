@@ -1,6 +1,6 @@
-<div class="flex aspect-square size-8 items-center justify-center rounded-md bg-accent-content text-accent-foreground">
-    <x-app-logo-icon class="size-5 fill-current text-white dark:text-black" />
-</div>
-<div class="ml-1 grid flex-1 text-left text-sm">
-    <span class="mb-0.5 truncate leading-none font-semibold">Laravel Starter Kit</span>
-</div>
+ <span class="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-700 text-white">
+     {{ substr(setting('site_title', config('app.name')), 0, 1) }}
+ </span>
+ <span class="text-left">
+     <b class="block text-base tracking-tight text-slate-900 dark:text-white">{{ setting('site_title', 'App') }}</b> 
+ </span>

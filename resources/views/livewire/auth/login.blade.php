@@ -37,6 +37,30 @@ new #[Layout('components.layouts.auth')] class extends Component {
         }
 
         RateLimiter::clear($this->throttleKey());
+
+         $user = Auth::user();
+
+        // Only enforce 2FA if the platform setting is on AND this specific
+        // user has actually confirmed 2FA on their own account. A user with
+        // a secret but no confirmed_at timestamp hasn't finished setup, so
+        // they should not be challenged.
+        if (
+            setting('two_factor_authentication', true)
+            && $user->two_factor_secret
+            && $user->two_factor_confirmed_at
+        ) {
+            // Log them back out of the "full" authenticated session — they
+            // are only considered a "pending 2FA" user until they pass the
+            // challenge, matching Fortify's own two-factor flow semantics.
+            Auth::logout();
+
+            Session::put('login.id', $user->getKey());
+            Session::put('login.remember', $this->remember);
+
+            $this->redirect(route('two-factor.login'), navigate: true);
+            return;
+        }
+        
         Session::regenerate();
 
         $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
@@ -68,49 +92,75 @@ new #[Layout('components.layouts.auth')] class extends Component {
      */
     protected function throttleKey(): string
     {
-        return Str::transliterate(Str::lower($this->email).'|'.request()->ip());
+        return Str::transliterate(Str::lower($this->email) . '|' . request()->ip());
     }
 }; ?>
 
-<div class="flex flex-col gap-6">
-    <x-auth-header title="Log in to your account" description="Enter your email and password below to log in" />
+<section class="rounded-[28px] border p-6 shadow-2xl sm:p-8
+    border-slate-200 bg-white
+    dark:border-white/[.08] dark:bg-[#111a2d]">
 
-    <!-- Session Status -->
-    <x-auth-session-status class="text-center" :status="session('status')" />
+    <p class="text-xs font-semibold uppercase tracking-[.16em] text-emerald-600 dark:text-emerald-500">
+        {{ setting('site_title', 'Account') }}
+    </p>
+    <h2 class="mt-2 text-2xl font-semibold text-slate-900 dark:text-white">Welcome back</h2>
+    <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">Enter your details to access your account.</p>
 
-    <form wire:submit="login" class="flex flex-col gap-6">
-        <!-- Email Address -->
-        <flux:input wire:model="email" label="{{ __('Email address') }}" type="email" name="email" required autofocus autocomplete="email" placeholder="email@example.com" />
+    <x-auth-session-status class="mt-4 text-center" :status="session('status')" />
 
-        <!-- Password -->
-        <div class="relative">
-            <flux:input
-                wire:model="password"
-                label="{{ __('Password') }}"
-                type="password"
-                name="password"
-                required
-                autocomplete="current-password"
-                placeholder="Password"
-            />
+    <form wire:submit="login" class="mt-6 flex flex-col gap-4">
+        <x-ui.input
+            wire:model="email"
+            label="{{ __('Email address') }}"
+            type="email"
+            name="email"
+            required
+            autofocus
+            autocomplete="email"
+            placeholder="email@example.com"
+            error="email" />
+
+        <x-ui.password
+            wire:model="password"
+            label="{{ __('Password') }}"
+            name="password"
+            required
+            autocomplete="current-password"
+            placeholder="Password"
+            error="password" />
+
+        <div class="flex items-center justify-between">
+            <flux:checkbox wire:model="remember" label="{{ __('Remember me') }}" />
 
             @if (Route::has('password.request'))
-                <x-text-link class="absolute right-0 top-0" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </x-text-link>
+            <a class="text-xs font-semibold text-emerald-600 dark:text-emerald-500"
+                href="{{ route('password.request') }}"
+                wire:navigate>
+                {{ __('Forgot your password?') }}
+            </a>
             @endif
         </div>
 
-        <!-- Remember Me -->
-        <flux:checkbox wire:model="remember" label="{{ __('Remember me') }}" />
-
-        <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full">{{ __('Log in') }}</flux:button>
-        </div>
+        <button
+            type="submit"
+            wire:loading.attr="disabled"
+            class="mt-2 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold
+                primary-button
+                shadow-lg shadow-emerald-500/20 transition hover:!bg-emerald-400
+                disabled:cursor-not-allowed disabled:opacity-70">
+            <span wire:loading.remove wire:target="login">{{ __('Log in') }}</span>
+            <span wire:loading wire:target="login">{{ __('Logging in...') }}</span>
+        </button>
     </form>
 
-    <div class="space-x-1 text-center text-sm text-zinc-600 dark:text-zinc-400">
-        Don't have an account?
-        <x-text-link href="{{ route('register') }}">Sign up</x-text-link>
-    </div>
-</div>
+    <div class="my-6 border-t border-slate-200 dark:border-white/[.08]"></div>
+
+    <p class="text-center text-sm text-slate-500 dark:text-slate-400">
+        New to {{ setting('site_name', 'us') }}? 
+        <a class="font-semibold text-emerald-600 dark:text-emerald-500"
+            href="{{ route('register') }}"
+            wire:navigate>
+            Create account
+        </a>
+    </p>
+</section>

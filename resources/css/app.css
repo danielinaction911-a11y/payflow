@@ -1,7 +1,11 @@
 @import 'tailwindcss';
 @import '../../vendor/livewire/flux/dist/flux.css';
+@import './dashboard.css';
 
+@source "../views/**";
 @source "../views";
+@source "../../app/**";
+@source "../../app/Livewire";
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
@@ -23,16 +27,18 @@
     --color-zinc-900: #171717;
     --color-zinc-950: #0a0a0a;
 
-    --color-accent: var(--color-neutral-800);
-    --color-accent-content: var(--color-neutral-800);
-    --color-accent-foreground: var(--color-white);
+    /* Accent now pulls from dashboard.css's --green instead of a separate
+       neutral-800/white pair — one brand color instead of two systems. */
+    --color-accent: var(--green);
+    --color-accent-content: var(--green);
+    --color-accent-foreground: #fff;
 }
 
 @layer theme {
-    .dark {
-        --color-accent: var(--color-white);
-        --color-accent-content: var(--color-white);
-        --color-accent-foreground: var(--color-neutral-800);
+     .dark {
+        --color-accent: var(--green);
+        --color-accent-content: var(--green);
+        --color-accent-foreground: #fff;
     }
 }
 
@@ -43,7 +49,7 @@
     ::before,
     ::backdrop,
     ::file-selector-button {
-        border-color: var(--color-gray-200, currentColor);
+       border-color: var(--line, currentColor);
     }
 }
 
@@ -60,7 +66,6 @@ textarea:focus[data-flux-control],
 select:focus[data-flux-control] {
     @apply outline-hidden ring-2 ring-accent ring-offset-2 ring-offset-accent-foreground;
 }
-
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */

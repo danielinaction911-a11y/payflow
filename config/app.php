@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'admin_path' => env('ADMIN_PATH', 'secure-panel'),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

@@ -1,124 +1,96 @@
-<!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
-    <head>
-        @include('partials.head')
-    </head>
-    <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:header container class="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
+<header class="sticky top-0 z-30 h-[76px] border-b backdrop-blur-xl border-slate-200 bg-white/80 dark:border-white/[.06] dark:bg-[#090f1e]/75">
+    <div class="flex h-full items-center justify-between px-4 sm:px-6 lg:px-9">
+        <div class="flex items-center gap-3">
+            <button @click="sidebarOpen = true" class="rounded-xl p-2 lg:hidden hover:bg-slate-100 dark:hover:bg-white/[.06]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 5h16"></path>
+                    <path d="M4 12h16"></path>
+                    <path d="M4 19h16"></path>
+                </svg>
+            </button>
 
-            <a href="{{ route('dashboard') }}" class="ml-2 mr-5 flex items-center space-x-2 lg:ml-0" wire:navigate>
-                <x-app-logo class="size-8" href="#"></x-app-logo>
-            </a>
+            <div class="hidden lg:block">
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Overview</p>
+                <h2 class="text-sm font-semibold text-slate-900 dark:text-white">{{ $title ?? 'Dashboard' }}</h2>
+            </div>
+        </div>
 
-            <flux:navbar class="-mb-px max-lg:hidden">
-                <flux:navbar.item icon="layout-grid" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')" wire:navigate>
-                    Dashboard
-                </flux:navbar.item>
-            </flux:navbar>
+        <div class="flex items-center gap-1.5 sm:gap-2" x-data="{ notifOpen: false, profileOpen: false }">
+            <x-ui.theme-switch class="relative icon-button rounded-xl" />
+            <div class="relative">
+                <button @click="notifOpen = !notifOpen; profileOpen = false" class="relative rounded-xl p-2.5 hover:bg-slate-100 dark:hover:bg-white/[.06]">
+                    <x-app-icon name="bell" class="h-[18px] w-[18px] text-slate-600 dark:text-slate-300" />
+                    @php
+                    $unreadCount = auth()->user()->notifications()->where('is_read', false)->count();
+                    @endphp
+                    @if($unreadCount > 0)
+                    <span class="absolute -right-1 -top-1 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white dark:ring-[#090f1e]">
+                        {{ $unreadCount > 99 ? '99+' : $unreadCount }}
+                    </span>
+                    @endif
+                </button>
 
-            <flux:spacer />
+                <div
+                    x-show="notifOpen" x-cloak @click.outside="notifOpen = false"
+                    x-transition
+                    class="absolute right-0 top-12 w-80 rounded-2xl border p-2 shadow-2xl border-slate-200 bg-white dark:border-white/[.08] dark:bg-[#111a2d]/95">
+                    <div class="flex justify-between px-3 py-2">
+                        <b class="text-sm text-slate-900 dark:text-white">Notifications</b>
+                        <a href="{{ Route::has('notifications.index') ? route('notifications.index') : '#' }}" class="text-xs font-medium text-emerald-600 dark:text-emerald-500">View all</a>
+                    </div>
 
-            <flux:navbar class="mr-1.5 space-x-0.5 py-0!">
-                <flux:tooltip content="Search" position="bottom">
-                    <flux:navbar.item class="!h-10 [&>div>svg]:size-5" icon="magnifying-glass" href="#" label="Search" />
-                </flux:tooltip>
-                <flux:tooltip content="Repository" position="bottom">
-                    <flux:navbar.item
-                        class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                        icon="folder-git-2"
-                        href="https://github.com/laravel/livewire-starter-kit"
-                        target="_blank"
-                        label="Repository"
-                    />
-                </flux:tooltip>
-                <flux:tooltip content="Documentation" position="bottom">
-                    <flux:navbar.item
-                        class="h-10 max-lg:hidden [&>div>svg]:size-5"
-                        icon="book-open-text"
-                        href="https://laravel.com/docs/starter-kits"
-                        target="_blank"
-                        label="Documentation"
-                    />
-                </flux:tooltip>
-            </flux:navbar>
+                    @forelse(auth()->user()->notifications()->where('is_read', false)->latest()->limit(4)->get() as $notification)
+                    <a href="{{ Route::has('notifications.index') ? route('notifications.index') : '#' }}"  wire:navigate class="flex w-full items-start gap-3 rounded-xl p-3 text-left hover:bg-slate-50 dark:hover:bg-white/[.06]">
+                        <i class="mt-1.5 h-2 w-2 rounded-full bg-emerald-400 shrink-0"></i>
+                        <span>
+                            <b class="block text-[13px] font-medium text-slate-900 dark:text-white">{{ $notification->title }}</b>
+                            <small class="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">{{ time_ago($notification->created_at) }}</small>
+                        </span>
+                    </a>
+                    @empty 
+                    <x-ui.empty-state
+                        icon="bell"
+                        title="No notifications yet"  />
+                    @endforelse
+                </div>
+            </div>
 
-            <!-- Desktop User Menu -->
-            <flux:dropdown position="top" align="end">
-                <flux:profile
-                    class="cursor-pointer"
-                    :initials="auth()->user()->initials()"
-                />
+            <div class="relative ml-1">
+                <button @click="profileOpen = !profileOpen; notifOpen = false" class="flex items-center gap-2 rounded-xl p-1 hover:bg-slate-100 dark:hover:bg-white/[.06]">
+                    @if (auth()->user()->avatar && file_exists(public_path(auth()->user()->avatar)))
+                    <img src="{{ auth()->user()->profileImageUrl() }}" alt="{{ auth()->user()->name }}"
+                        class="w-8 h-8 rounded-full object-cover ring-2 ring-green-400 dark:ring-green-500" />
+                    @else
+                    <span class="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-sky-400 to-violet-500 text-[11px] font-bold text-white">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 2)) }}
+                    </span>
+                    @endif
+                </button>
 
-                <flux:menu>
-                    <flux:menu.radio.group>
-                        <div class="p-0 text-sm font-normal">
-                            <div class="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                                <span class="relative flex h-8 w-8 shrink-0 overflow-hidden rounded-lg">
-                                    <span
-                                        class="flex h-full w-full items-center justify-center rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white"
-                                    >
-                                        {{ auth()->user()->initials() }}
-                                    </span>
-                                </span>
+                <div
+                    x-show="profileOpen" x-cloak @click.outside="profileOpen = false"
+                    x-transition
+                    class="absolute right-0 top-12 w-56 rounded-2xl border p-2 shadow-2xl border-slate-200 bg-white dark:border-white/[.08] dark:bg-[#111a2d]/95">
+                    <div class="border-b px-3 py-2.5 border-slate-200 dark:border-white/[.08]">
+                        <b class="block text-sm text-slate-900 dark:text-white">{{ auth()->user()->name }}</b>
+                        <small class="text-slate-500 dark:text-slate-400">{{ auth()->user()->email }}</small>
+                    </div>
 
-                                <div class="grid flex-1 text-left text-sm leading-tight">
-                                    <span class="truncate font-semibold">{{ auth()->user()->name }}</span>
-                                    <span class="truncate text-xs">{{ auth()->user()->email }}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </flux:menu.radio.group>
+                    <a href="{{ route('profile.index') }}" wire:navigate class="mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[.06]">
+                        <x-app-icon name="user-round" class="h-4 w-4" /> Profile
+                    </a>
+                    <a href="{{ route('security.index') }}" wire:navigate class="flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-white/[.06]">
+                        <x-app-icon name="shield-check" class="h-4 w-4" /> Security
+                    </a>
 
-                    <flux:menu.separator />
-
-                    <flux:menu.radio.group>
-                        <flux:menu.item href="/settings/profile" icon="cog" wire:navigate>Settings</flux:menu.item>
-                    </flux:menu.radio.group>
-
-                    <flux:menu.separator />
-
-                    <form method="POST" action="{{ route('logout') }}" class="w-full">
+                    <form method="POST" action="{{ route('logout') }}">
                         @csrf
-                        <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full">
-                            {{ __('Log Out') }}
-                        </flux:menu.item>
+                        <button type="submit" class="mt-1 flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm text-rose-500 hover:bg-rose-50 dark:hover:bg-red-500/10">
+                            <x-app-icon name="log-out" class="h-4 w-4" /> Log out
+                        </button>
                     </form>
-                </flux:menu>
-            </flux:dropdown>
-        </flux:header>
-
-        <!-- Mobile Menu -->
-        <flux:sidebar stashable sticky class="lg:hidden border-r border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
-
-            <a href="{{ route('dashboard') }}" class="ml-1 flex items-center space-x-2" wire:navigate>
-                <x-app-logo class="size-8" href="#"></x-app-logo>
-            </a>
-
-            <flux:navlist variant="outline">
-                <flux:navlist.group heading="Platform">
-                    <flux:navlist.item icon="layout-grid" href="{{ route('dashboard') }}" :current="request()->routeIs('dashboard')" wire:navigate>
-                        Dashboard
-                    </flux:navlist.item>
-                </flux:navlist.group>
-            </flux:navlist>
-
-            <flux:spacer />
-
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                    Repository
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits" target="_blank">
-                    Documentation
-                </flux:navlist.item>
-            </flux:navlist>
-        </flux:sidebar>
-
-        {{ $slot }}
-
-        @fluxScripts
-    </body>
-</html>
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
